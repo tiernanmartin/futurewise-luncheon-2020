@@ -6,7 +6,8 @@ library(tidyverse)
 library(sf)
 library(janitor)
 library(scales)
-library(patchwork) 
+library(patchwork)  
+library(extrafont)
 
 options(tigris_class = 'sf')
 
@@ -179,10 +180,11 @@ dat_top10_pct <- dat_pct %>%
 
 # PREPARE PLOT THEME ------------------------------------------------------
 
-line_plot_theme <- theme_void()
+windowsFonts(Apercu = windowsFont("Apercu"))
 
 bar_plot_theme <- theme_minimal() + 
-  theme(plot.caption = element_text(hjust=0, size=rel(1.5)),
+  theme(text = element_text(family = "Apercu"), 
+        plot.caption = element_text(face = "bold", hjust=0, size=rel(1.5)),
         legend.position = "none", 
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
@@ -366,4 +368,20 @@ params_pct <- tibble(target_county = county_list,
 params_pct <- params_pct %>% prepend(c(.abs_or_pct = "pct"))
 
 plot_list_pct <- pmap(params_pct, create_combined_plot)
+
+plot_list <- c(plot_list_abs,
+               plot_list_pct)
+
+# SAVE PLOTS --------------------------------------------------------------
+
+filenames <-  str_c("wa","pop",
+                    c(rep("abs", times = 10), rep("pct", times = 10)),
+                    rep(1:10, times = 2),
+                    c(unique(dat_top10_abs$NAME),unique(dat_top10_pct$NAME)),
+                    sep = " ") %>%
+  str_replace_all("\\s","-") %>% 
+  str_c(".pdf")
+
+walk2(filenames, plot_list, ggsave, device = cairo_pdf, path = "images", width = 4, height = 4, units = "in")
+
 
